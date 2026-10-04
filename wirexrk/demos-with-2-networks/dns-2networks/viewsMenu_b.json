@@ -1,9 +1,0 @@
-[
-    {   "packetFilter": "! arp",
-        "view": "APPLICATION+TRANSPORT+NETWORK",
-        "text": "Hop-by-hop",
-        "color": "green"
-    }
-
-]
-
