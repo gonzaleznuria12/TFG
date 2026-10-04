@@ -691,6 +691,88 @@ AFRAME.registerComponent('controller', {
 			setTIME_UNIT(MAX_TIME_UNIT - Number(slider.value))
 		});
 
+
+		// ==========================================================
+		// --- INICIO CÓDIGO PROTOTIPO 1 (MODO RETO) ---
+		// ==========================================================
+
+		// 1. Crear el panel HTML dinámicamente y añadirlo a la página
+		let panelReto = document.createElement('div');
+		panelReto.id = 'panel-reto';
+		panelReto.style.cssText = 'display: none; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 9999; background: white; padding: 30px; border-radius: 12px; text-align: center; border: 4px solid #3498db; font-family: sans-serif; box-shadow: 0px 10px 30px rgba(0,0,0,0.5);';
+		panelReto.innerHTML = `
+			<h2 style="color: #2c3e50; margin-top: 0; font-size: 24px;">Modo Reto: Intervención Activa</h2>
+			<p style="color: #34495e; font-size: 16px; margin-bottom: 25px;">La simulación se ha detenido temporalmente.<br>¿Qué crees que va a pasar a continuación con el paquete enrutado?</p>
+			<button id="btn-continuar" style="padding: 12px 24px; background: #2ecc71; color: white; border: none; cursor: pointer; border-radius: 6px; font-size: 16px; font-weight: bold; transition: background 0.3s;">
+				Continuar Simulación
+			</button>
+		`;
+		document.body.appendChild(panelReto);
+
+		// 2. Lógica para forzar la pausa y mostrar el panel a los 5 segundos de arrancar
+		setTimeout(() => {
+			// Mostrar el panel HTML centrado
+			document.getElementById('panel-reto').style.display = 'block';
+
+			// Congelar la red simulando que se pulsó el Pause
+			var networks = document.querySelectorAll('a-entity[network]:not([network=""])');
+			networks.forEach((network) => {
+				var flying = network.components["network"].getFlying();
+				network.components["network"].setAnimationState("PAUSED");
+
+				// Actualizar el icono del botón de la interfaz por si el usuario lo mira
+				var playPauseBtn = document.querySelector("#playPauseButton");
+				if (playPauseBtn && playPauseBtn.textContent.trim() === '⏸️') {
+					playPauseBtn.textContent = '▶️';
+				}
+
+				// Detener todos los paquetes que estén volando por los enlaces
+				for (const packet of flying) {
+					packet.emit("animation-pause", null, false);
+					for (const child of packet.children) {
+						child.emit("animation-pause", null, false);
+					}
+				}
+			});
+		}, 5000); // 5000ms = 5 segundos desde que carga
+
+		// 3. Lógica para reanudar la simulación al pulsar el botón del panel
+		document.getElementById('btn-continuar').addEventListener('click', () => {
+			// Ocultar el panel
+			document.getElementById('panel-reto').style.display = 'none';
+
+			// Reanudar la animación de la red
+			var networks = document.querySelectorAll('a-entity[network]:not([network=""])');
+			networks.forEach((network) => {
+				var flying = network.components["network"].getFlying();
+				network.components["network"].setAnimationState("MOVING");
+
+				// Actualizar el icono del botón a Pause de nuevo
+				var playPauseBtn = document.querySelector("#playPauseButton");
+				if (playPauseBtn && playPauseBtn.textContent.trim() === '▶️') {
+					playPauseBtn.textContent = '⏸️';
+				}
+
+				// Volver a emitir la señal de movimiento a los paquetes
+				for (const packet of flying) {
+					packet.emit("animation-resume", null, false);
+					for (const child of packet.children) {
+						child.emit("animation-resume", null, false);
+					}
+				}
+			});
+		});
+
+		// Añadir un simple efecto visual de hover al botón
+		let btnContinuar = document.getElementById('btn-continuar');
+		btnContinuar.addEventListener('mouseover', () => btnContinuar.style.backgroundColor = '#27ae60');
+		btnContinuar.addEventListener('mouseout', () => btnContinuar.style.backgroundColor = '#2ecc71');
+
+		// ==========================================================
+		// --- FIN CÓDIGO PROTOTIPO 1 ---
+		// ==========================================================
+
+
 		console.log("GUI panel added to the scene")
 
 	}
